@@ -15,33 +15,8 @@ A deep neural network is used to categorize the actions into the desired domain 
 
 **Warning:** Since the 10 fps video and 0.5s-window  are used for training, you must also limit your video fps to about 10 fps (7~12 fps) if you want to test the pre-trained model on your own video or web camera. 
 
-**Contents:**
-- [1. Algorithm](#1-algorithm)
-- [2. Install Dependency (OpenPose)](#2-install-dependency--openpose-)
-- [3. Program structure](#3-program-structure)
-  * [Diagram](#diagram)
-  * [Main scripts](#main-scripts)
-- [4. How to run: Inference](#4-how-to-run--inference)
-  * [Introduction](#introduction)
-  * [Test on video file](#test-on-video-file)
-  * [Test on a folder of images](#test-on-a-folder-of-images)
-  * [Test on web camera](#test-on-web-camera)
-- [5. Training data](#5-training-data)
-  * [Download my data](#download-my-data)
-  * [Data format](#data-format)
-  * [Classes](#classes)
-- [6. How to run: Training](#6-how-to-run--training)
-- [7. Result and Performance](#7-result-and-performance)
-
-
-
-# 1. Algorithm
-
-
-I collected videos of 9 Types of actions: `['stand', 'walk', 'run', 'jump', 'sit', 'squat', 'kick', 'punch', 'wave']`. The total video lengths are about 20 mins, containing about 10000 video frames recorded at 10 frames per second.
-
-The workflow of the algorithm is:
-*  Get the joints' positions by [OpenPose](https://github.com/ildoonet/tf-pose-estimation).  
+## The workflow of the algorithm is:
+*  Get the skeletal joint's positions by [OpenPose](https://github.com/ildoonet/tf-pose-estimation).  
 *  Track each person. Euclidean distance between the joints of two skeletons is used for matching two skeletons. 
 See `class Tracker` in [lib_tracker.py](utils/lib_tracker.py)
 *  Fill in a person's missing joints by these joints' relative pos in previous frame.  See `class FeatureGenerator` in [lib_feature_proc.py](utils/lib_feature_proc.py). So does the following.
@@ -51,23 +26,32 @@ See `class Tracker` in [lib_tracker.py](utils/lib_tracker.py)
 *  Apply PCA to reduce feature dimension to 80.  Classify by DNN of 3 layers of 50x50x50 (or switching to other classifiers in one line). See `class ClassifierOfflineTrain` in [lib_classifier.py](utils/lib_classifier.py)
 *  Mean filtering the prediction scores between 2 frames. Add label above the person if the score is larger than 0.8. See `class ClassifierOnlineTest` in [lib_classifier.py](utils/lib_classifier.py)
 
-For more details about how the features are extracted, please see my [report](https://github.com/felixchenfy/Data-Storage/blob/master/EECS-433-Pattern-Recognition/FeiyuChen_Report_EECS433.pdf).
 
+# 1. Data Acquistition
+Data consitiong of videos with 10 Types of actions was collected: `['stand', 'walk', 'run', 'fall', 'jump', 'sit', 'squat', 'kick', 'punch', 'wave']`. The total video lengths are about 20 mins, containing about 12073 video frames recorded at 10 frames per second.
+The source images for training are stored here.
 
+## Download data
+
+Please download the data from
+* Google driver: https://drive.google.com/open?id=1V8rQ5QR5q5zn1NHJhhf-6xIeDdXVtYs9
+* or Baidu Cloud: https://pan.baidu.com/s/11M2isbEQnBTQHT3-634AHw
+
+Unzip the data and you will see the folder: `source_images3`. Use it to replace the `data/source_images3`.
 
 # 2. Install Dependency (OpenPose)
 We need Python >= 3.6.
 
 ## 2.1. Download tf-pose-estimation
 
-This project uses a OpenPose program developped by [ildoonet](https://github.com/ildoonet). The source project has been deleted. I've managed to fork it to here: [tf-pose-estimation](https://github.com/felixchenfy/ildoonet-tf-pose-estimation). 
+This project uses a OpenPose program developped by [ildoonet](https://github.com/ildoonet). The source project has been deleted. It has been forked here for the Tensorflow version 2.0: (https://github.com/gsethi2409/tf-pose-estimation.git)
 
 Please download it:
 ```bash
 export MyRoot=$PWD
 cd src/githubs  
-git clone https://github.com/felixchenfy/ildoonet-tf-pose-estimation
-mv ildoonet-tf-pose-estimation tf-pose-estimation
+git clone https://github.com/gsethi2409/tf-pose-estimation.git
+mv gsethi2409-tf-pose-estimation tf-pose-estimation
 ```
 
 ## 2.2. Download pretrained models
@@ -83,30 +67,77 @@ cd $MyRoot/src/githubs/tf-pose-estimation/models/graph/cmu
 bash download.sh  
 ```
 
-## 2.3. Insteall libraries
+## 2.3. Install libraries
 Basically you have to follow the tutorial of `tf-pose-estimation` project. If you've setup the env for that project, then it's almost the same env to run my project.
 
-Please follow its tutorial [here](https://github.com/felixchenfy/ildoonet-tf-pose-estimation#install). I've copied what I ran to below:
-```bash
-conda create -n tf tensorflow-gpu
-conda activate tf
-
-cd $MyRoot/src/githubs/tf-pose-estimation
-pip3 install -r requirements.txt
-pip3 install jupyter tqdm
-
-# Install tensorflow.
-# You may need to take a few tries and select the version that is compatible with your cuDNN. If the version mismatches, you might get this error: "Error : Failed to get convolution algorithm."
-pip3 install tensorflow-gpu==1.13.1
-
-# Compile c++ library as described [here](https://github.com/felixchenfy/ildoonet-tf-pose-estimation#install-1):
-sudo apt install swig
-pip3 install "git+https://github.com/philferriere/cocoapi.git#egg=pycocotools&subdirectory=PythonAPI"
-cd $MyRoot/src/githubs/tf-pose-estimation/tf_pose/pafprocess
-swig -python -c++ pafprocess.i && python3 setup.py build_ext --inplace
+Step 1: Create a new virtual environment
+```
+conda create — name AIMachine
 ```
 
-Then install some small libraries used by me:
+Step 2: Activate your virtual environment
+```
+conda activate AIMachine
+```
+
+Step 3: Install Python
+```
+conda install python==3.7.6
+```
+
+Step 4: Install the latest version of Tensorflow
+```
+conda install tensorflow
+```
+Optional reading: https://docs.anaconda.com/anaconda/user-guide/tasks/tensorflow/
+
+Step 5: Create a new working directory and go into the folder.
+```
+mkdir myWorkspace
+cd myWorkspace
+```
+
+Step 6: Clone the pose estimation repository.
+```
+git clone https://github.com/gsethi2409/tf-pose-estimation.git
+```
+Step 7: Enter the folder and install the requirements.
+```
+cd tf-pose-estimation
+pip install -r requirements.txt
+```
+Step 8: Install SWIG
+```
+conda install swig
+```
+Step 9: Build C++ library for post-processing.
+```
+cd tf_pose/pafprocess
+swig -python -c++ pafprocess.i && python3 setup.py build_ext --inplace
+```
+Step 10: Install OpenCV.
+```
+pip install opencv-python
+```
+Step 11: Install tf-slim library.
+```
+pip install git+https://github.com/adrianc-a/tf-slim.git@remove_contrib
+```
+Step 12: Download Tensorflow Graph File(pb file).
+```
+cd models/graph/cmu
+bash download.sh
+cd ../../..
+```
+Step 13: Run a quick test!
+```
+python run.py --model=mobilenet_thin --resize=432x368 --image=./images/p1.jpg
+```
+Step 14: Run a webcam test!
+```
+python run_webcam.py --model=mobilenet_thin --resize=432x368 --camera=0
+```
+Then install some small libraries used in the root project:
 ```bash
 cd $MyRoot
 pip3 install -r requirements.txt
@@ -307,11 +338,6 @@ First, you may read
 
 to know the training data format and the input and output of each script.
 
-Then, follow the following steps to do the training:
-* Collect your own data and label them, or use my data. [Here](https://github.com/felixchenfy/record_images_from_usbcam) is tool to record images from web camera.
-* If you are using your data, change the values of `classes` and `images_description_txt` and `images_folder` inside [config/config.yaml](config/config.yaml).
-* Depend on your need, you may change parameters in [config/config.yaml](config/config.yaml).
-* Finally, run the following scripts one by one:
     ``` bash
     python src/s1_get_skeletons_from_training_imgs.py
     python src/s2_put_skeleton_txts_to_a_single_txt.py 
@@ -324,10 +350,10 @@ After training is done, you can run the inference script `src/s5_test.py` as des
 
 # 7. Result and Performance
 
-Unfortunately this project only works well on myself, because I only used the video of myself.
+The suggested framework is effective in differentiating between regular and aberrant acts carried out within the same frame. The prediction scores changed as the action shifted from Stand to Punch. Similar to this, the system accurately detects various actions and can identify up to 5-7 people in the frame. On the testing set, the accuracy of our suggested model is 98.2%
 
-The performance is bad for (1) people who have different body shape, (2) people are far from the camera. **How to improve?** I guess the first thing to do is to collect larger training set from different people. Then, improve the data augmentation and featuer selection.
+In this work, a human action recognition system has been developed that can distinguish 10 different kinds of actions consisting of normal and abnormal activities. This was implemented by using the OpenPose API to extract skeletal coordinate information (position), and then using this pose information to classify activities using a DNN Classifier. Data is collected from videos of 10 different actions which include normal (stand, walk, run, sit, squat, jump and wave) and violent actions (punch and kick). Five classification algorithms, k-Nearest Neighbors, Support Vector Machines (SVM) , SVM with kernel, Deep Neural Network and Random Forests were tested to find better results for our model. From the experiment results, it has been observed that DNN resulted in a higher accuracy. The proposed system is built on a real-time framework and uses skeletal data for feature extraction and classification. The recognition accuracy achieves up to 98.2% using a training set of over 12,000 samples. After training, actual videos were used to evaluate the action detection system. It regularly and correctly identified the actions on a video that was a perfect fit for our training set, and it also performed well on other videos. 
 
-Besides, my simple tracking algorithm only works for a few number of people (maybe 5). 
+The experiment results on training KTH Dataset yielded good results in recognizing handwaving, jogging, running, and boxing. In addition, the proposed system preprocesses the data to account for missing critical body parts like the neck or thigh. When a joint is missing, the frame is often deleted or declared to be invalid. The recognition of human activity has been the subject of numerous research, but stronger measures must be adopted for widespread applications. Detecting all of the human activities performed in day-to-day life is challenging as it requires a very huge amount of training data but more activities can be added according to the application such as healthcare, military, intelligent surveillance system, human-computer interfaces and security.
 
-Due to the not-so-good performance of action recognition, I guess you can only use this project for course demo, but not for any commercial applications ... T.T 
+
