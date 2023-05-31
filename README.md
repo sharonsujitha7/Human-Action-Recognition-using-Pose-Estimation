@@ -194,7 +194,7 @@ src/s5_test.py
 The input and output of these files as well as some parameters are defined in the configuration file [config/config.yaml](config/config.yaml). I paste part of it below just to provide an intuition:
 
 ``` yaml
-classes: ['stand', 'walk', 'run', 'jump', 'sit', 'squat', 'kick', 'punch', 'wave']
+classes: ['stand', 'walk', 'run', 'jump', 'sit', 'squat', 'fall', 'kick', 'punch', 'wave']
 
 image_filename_format: "{:05d}.jpg"
 skeleton_filename_format: "{:05d}.txt"
