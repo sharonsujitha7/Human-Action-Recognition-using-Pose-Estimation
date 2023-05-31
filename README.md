@@ -1,4 +1,4 @@
-# Human-Action-Recognition-using-Pose-Estimation
+# Real-Time-Human-Action-Recognition-Using-Skeletal-Joint-Points
 
 **Abstract**: The use of human action recognition has been gaining attention in recent years, particularly in the context of women and children for monitoring and improving safety in public spaces.
 The study describes a real-time action detection system that extracts human skeletons from video frames using the OpenPose algorithm that can be used for distinguishing normal human activities and abnormal activities which could cause a threat.
